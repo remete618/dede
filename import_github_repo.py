@@ -12,6 +12,10 @@ import subprocess
 import sys
 
 
+# Timeout for git clone operations (in seconds)
+CLONE_TIMEOUT_SECONDS = 300
+
+
 def validate_github_url(repo_url):
     """
     Validate that the URL is a valid GitHub repository URL.
@@ -23,9 +27,10 @@ def validate_github_url(repo_url):
         True if valid, False otherwise
     """
     # Pattern to match GitHub URLs (both HTTPS and SSH)
+    # Note: Repository names can only contain alphanumeric, hyphens, and underscores
     patterns = [
-        r'^https://github\.com/[\w\-]+/[\w\-\.]+(?:\.git)?$',
-        r'^git@github\.com:[\w\-]+/[\w\-\.]+(?:\.git)?$'
+        r'^https://github\.com/[\w\-]+/[\w\-]+(?:\.git)?$',
+        r'^git@github\.com:[\w\-]+/[\w\-]+(?:\.git)?$'
     ]
     
     return any(re.match(pattern, repo_url) for pattern in patterns)
@@ -66,7 +71,7 @@ def import_github_repo(repo_url, destination=None, branch=None):
             print(f"Destination: {destination}")
         
         # Run git clone with a timeout to prevent indefinite blocking
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=CLONE_TIMEOUT_SECONDS)
         
         if result.returncode == 0:
             print("Repository imported successfully!")
@@ -81,7 +86,7 @@ def import_github_repo(repo_url, destination=None, branch=None):
         print("Error: git command not found. Please install git.")
         return False
     except subprocess.TimeoutExpired:
-        print("Error: Git clone operation timed out after 300 seconds.")
+        print(f"Error: Git clone operation timed out after {CLONE_TIMEOUT_SECONDS} seconds.")
         return False
     except Exception as e:
         print(f"Error: {str(e)}")
